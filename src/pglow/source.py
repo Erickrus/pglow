@@ -76,15 +76,21 @@ def discover_markdown(directory: Path, include_hidden: bool = False) -> list[Pat
 def from_argument(argument: str) -> Source:
     if argument == "-":
         return Source(_remove_frontmatter(sys.stdin.read()), "stdin")
+
+    path = Path(argument).expanduser()
+    if path.is_file():
+        return Source(_remove_frontmatter(path.read_text(encoding="utf-8", errors="replace")), str(path.resolve()))
+
     parsed = urlparse(argument)
     if parsed.scheme:
         readme = repository_readme(argument)
         url = readme if readme else argument
         return Source(_remove_frontmatter(_request(url).decode("utf-8", "replace")), url)
-    path = Path(argument).expanduser()
+    # path = Path(argument).expanduser()
     if not path.is_file():
         raise ValueError(f"unable to open file: {path}")
     return Source(
         _remove_frontmatter(path.read_text(encoding="utf-8", errors="replace")),
         str(path.resolve()),
     )
+
